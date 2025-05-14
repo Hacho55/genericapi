@@ -34,6 +34,22 @@ async def log_requests(request: Request, call_next):
     logger.info(f"Request: {request.method} {request.url}")
     logger.info(f"Headers: {dict(request.headers)}")
     
+    # Log del body para peticiones POST
+    if request.method == "POST":
+        try:
+            # Leemos el body
+            body = await request.body()
+            # Decodificamos el body como JSON si es posible
+            try:
+                body_str = json.loads(body)
+                logger.info(f"Request Body: {body_str}")
+            except json.JSONDecodeError:
+                logger.info(f"Request Body (raw): {body.decode()}")
+            # Importante: necesitamos reconstruir el body para que pueda ser leído nuevamente
+            request._body = body
+        except Exception as e:
+            logger.error(f"Error reading request body: {str(e)}")
+    
     # Procesar la request
     response: Response = await call_next(request)
     
@@ -41,6 +57,13 @@ async def log_requests(request: Request, call_next):
     process_time = (datetime.now() - request_time).total_seconds()
     logger.info(f"Response status: {response.status_code}")
     logger.info(f"Process time: {process_time:.4f} seconds")
+    
+    # Log del contenido de la response
+    try:
+        response_body = response.body.decode()
+        logger.info(f"Response Body: {response_body}")
+    except Exception as e:
+        logger.error(f"Error reading response body: {str(e)}")
     
     return response
 
