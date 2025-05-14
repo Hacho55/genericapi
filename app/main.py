@@ -58,12 +58,14 @@ async def log_requests(request: Request, call_next):
     logger.info(f"Response status: {response.status_code}")
     logger.info(f"Process time: {process_time:.4f} seconds")
     
-    # Log del contenido de la response
-    try:
-        response_body = response.body.decode()
-        logger.info(f"Response Body: {response_body}")
-    except Exception as e:
-        logger.error(f"Error reading response body: {str(e)}")
+    # Log del contenido de la response de manera segura
+    if isinstance(response, JSONResponse):
+        try:
+            logger.info(f"Response Body (JSON): {response.body.decode()}")
+        except Exception as e:
+            logger.error(f"Error reading JSON response body: {str(e)}")
+    else:
+        logger.info(f"Response Type: {type(response).__name__}")
     
     return response
 
